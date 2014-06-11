@@ -1,8 +1,13 @@
 var WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
 var SHIFTS = ['day', 'night', 'prn'];
 var MAX_SLOTS = [3, 3, 1]; // persons to work in day, night, prn
-var POSITION_COUNT = 4;
+var TOTAL_POSITION_FIELD_COUNT = 4;
 var TOTAL_PERSON_FIELD_COUNT = 15;
+var DAY_PER_WEEK = 7;
+
+var DAY_INDEX = 0;
+var NIGHT_INDEX = 1;
+var PRN_INDEX = 2;
 
 $(function() {
   function moveToPage(pageName) {
@@ -12,7 +17,7 @@ $(function() {
   
   function getAllPositionNames() {
     var allPositions = [];
-    for (var i = 1; i <= POSITION_COUNT; i++) {
+    for (var i = 1; i <= TOTAL_POSITION_FIELD_COUNT; i++) {
       var positionName = $('#position' + i).val().trim();
       if (positionName) {
         allPositions.push(positionName);
@@ -90,8 +95,8 @@ $(function() {
       var personName = allPersonNames[i];
       inHtml += '<tr><td>' + personName + '</td>';
       for (var j = 0; j < allPositions.length; j++) {
-        inHtml += '<td><input id="name' + i + '-position' + j 
-            + '" type="checkbox" checked></td>';
+        inHtml += '<td><input id="name-position-' + i + '-' + j 
+            + '" type="checkbox" checked="checked"></td>';
       }2
       inHtml += '</tr>';
     }
@@ -155,6 +160,18 @@ $(function() {
     nameMustWorkTable.html(inHtml);
   }
   
+  function renderPrnMustTable(allDateStrings) {
+    var inHtml = '<tr><th>날짜</th><th>prn 꼭 있어야 함</th></tr>';
+    for (var i = 0; i < allDateStrings.length; i++) {
+      inHtml += '<tr><td>' + allDateStrings[i] + '</td>';
+      inHtml += '<td><input id="prn-must-' + i + '" type="checkbox"></td></tr>';
+    }
+    
+    var prnMustTable = $('#prn-must-table');
+    prnMustTable.empty();
+    prnMustTable.html(inHtml);
+  }
+  
   function renderPage2() {
     var allPositions = getAllPositionNames();
     var allPersonNames = getAllPersonNames();
@@ -163,6 +180,7 @@ $(function() {
     renderNamePositionTable(allPositions, allPersonNames);
     renderNameVacationTable(allPersonNames, allDateStrings);
     renderNameMustWorkTable(allPersonNames, allDateStrings);
+    renderPrnMustTable(allDateStrings);
   }
   
   function addToResultPanel(message) {
@@ -174,12 +192,13 @@ $(function() {
     
   }
   
-  function getVariables() {
-    // x_a_b_c:
+  function setMax(line, maxValue) {
+    return line + ' <= ' + maxValue;
   }
   
   function println(str, line) {
     str += line + '\n';
+    return str;
   }
   
   function formatVar(a, b, c, d) {
@@ -194,8 +213,15 @@ $(function() {
     
     var str = '';
     
+    /** x_a_b_c_d:
+     * a: person id
+     * b: day id (0-based)
+     * c: time id (day: 0, night: 1, prn: 2)
+     * d: position id (0, 1, 2)
+     */
+    
     // generate objective string
-    println(str, 'Maximize');
+    str = println(str, 'Maximize');
     var line = 'obj: ';
     for (var a = 0; a < personCount; a++) {
       for (var b = 0; b < dayCount; b++) {
@@ -205,10 +231,10 @@ $(function() {
         }
       }
     }
-    println(str, line);
+    str = println(str, line);
     
     // generate subject to string
-    println(str, 'Subject To');
+    str = println(str, 'Subject To');
     
     // 1. per-person total work
     for (var a = 0; a < personCount; a++) {
@@ -220,45 +246,243 @@ $(function() {
           }
         }
       }
-      line += ' <= ' + allHours[a];
-      println(str, line);
+      line = setMax(line, allHours[a]);
+      str = println(str, line);
     }
     
     // 2. cannot work more than once in the same day
     for (var a = 0; a < personCount; a++) {
       for (var b = 0; b < dayCount; b++) {
-        var line = 'nextday_' + a + '_' + b + ': ';
+        var line = 'sameday_' + a + '_' + b + ': ';
         for (var c = 0; c <= SHIFTS.length; c++) {
           for (var d = 0; d < MAX_SLOTS[c]; d++) {
             line += formatVar(a, b, c, d);
           }
         }
-        line += '<= 1';
-        println(line);
+        line = setMax(line, 1);
+        str = println(str, line);
       }
     }
     
-    // 3. cannot work more than once night-prn-day
+    // 3. cannot work more than once (night or prn)->(day of tomorrow)
     for (var a = 0; a < personCount; a++) {
-      for (var b = 0; b < )
+      for (var b = 0; b < dayCount-1; b++) {
+        var line = 'nextday_' + a + '_' + b + ': ';
+        for (var c = NIGHT_INDEX; c <= PRN_INDEX; c++) { // night, prn of today
+          for (var d = 0; d < MAX_SLOTS[c]; d++) {
+            line += formatVar(a, b, c, d);
+          }
+        }
+        for (var d = 0; d < MAX_SLOTS[DAY_INDEX]; d++) { // day of tomorrow
+          line += formatVar(a, b+1, 0, d);
+        }
+        line = setMax(line, 1);
+        str = println(str, line);
+      }
     }
     
+    // 4. cannot work more than once (night) -> (prn of tomorrow)
+    for (var a = 0; a < personCount; a++) {
+      for (var b = 0; b < dayCount-1; b++) {
+        var line = 'no_prn_after_night_' + a + '_' + b + ': ';
+        for (var d = 0; d < MAX_SLOTS[NIGHT_INDEX]; d++) { // night of today
+          line += formatVar(a, b, 1, d);
+        }
+        for (var d = 0; d < MAX_SLOTS[PRN_INDEX]; d++) { // prn of tomorrow
+          line += formatVar(a, b+1, 2, d);
+        }
+        line = setMax(line, 1);
+        str = println(str, line);
+      }
+    }
+    
+    // 5. someone should work at given day and night
+    for (var b = 0; b < dayCount; b++) {
+      for (var c = DAY_INDEX; c <= NIGHT_INDEX; c++) {
+        for (var d = 0; d < MAX_SLOTS[c]; d++) {
+          var line = 'should_' + b + '_' + c + '_' + d + ': ';
+          for (var a = 0; a < personCount; a++) {
+            line += formatVar(a, b, c, d);
+          }
+          line += ' = 1';
+          str = println(str, line);
+        }
+      }
+    }
+    
+    // 6. someone should work at some prn and may not work at some prn
+    for (var b = 0; b < dayCount; b++) {
+      var line = 'prn_work_' + b + '_' + PRN_INDEX + '_0: ';
+      for (var a = 0; a < personCount; a++) {
+        line += formatVar(a, b, PRN_INDEX, 0);
+      }
+      var mustPrn = $('#must-prn-' + b).is(':checked');
+      if (mustPrn) line += ' = 1';
+      else line = setMax(line, 1);
+      str = println(str, line);
+    }
+    
+    // skip 7, 8, 9: they will be covered in Bounds
+    
+    // 10. Maximum n night shifts per 7 consecutive days
+    var maxNightInSevenDays = $('#max-night-in-seven-days').val();
+    for (var a = 0; a < personCount; a++) {
+      for (var b = 0; b < dayCount-DAY_PER_WEEK; b++) {
+        var line = 'max_night_in_seven_days_' + a + '_' + b + ': '
+        for (var day = 0; day < DAY_PER_WEEK; day++) {
+          for (var d = 0; d < MAX_SLOTS[NIGHT_INDEX]; d++) {
+            line += formatVar(a, b+day, NIGHT_INDEX, d);
+          }
+        }
+        line = setMax(line, maxNightInSevenDays);
+        str = println(str, line);
+      }
+    }
       
-      
-      
-      
+    // 11. Maximum n consecutive nights
+    var maxConsecutiveNight = $('#max-consecutive-night').val();
+    for (var a = 0; a < personCount; a++) {
+      for (var b = 0; b < dayCount-maxConsecutiveNight; b++) {
+        var line = 'consecutive_night_' + a + '_' + b + ': ';
+        for (var day = 0; day < maxConsecutiveNight; day++) {
+          for (var d = 0; d < MAX_SLOTS[NIGHT_INDEX]; d++) {
+            line += formatVar(a, b+day, NIGHT_INDEX, d);
+          }
+        }
+        line = setMax(line, maxConsecutiveNight);
+        str = println(str, line);
+      }
+    }
+    
+    
+    // Bounds
+    
+    str = println(str, 'Bounds')
+    for (var a = 0; a < personCount; a++) {
+      for (var b = 0; b < dayCount; b++) {
+        for (var c = 0; c < SHIFTS.length; c++) {
+          // ASSUME NO INCONSISTENCY!!!
+          // if person should work
+          var shouldWork = $('#name-must-work-' + a + '-' + b + '-' + c).is(':checked');
+          // if person should not work
+          var isVacation = $('#name-vacation-' + a + '-' + b + '-' + c).is(':checked');
+          var minval = null;
+          var maxval = null;
+          for (var d = 0; d < MAX_SLOTS[c]; d++) {
+            if (shouldWork) {
+              minval = 1;
+              maxval = 1;
+            }
+            else if (isVacation) {
+              minval = 0;
+              maxval = 0;
+            }
+            else if (c == PRN_INDEX) {
+              // anyone can work in prn
+              minval = 0;
+              maxval = 1;
+            }
+            else {
+              minval = 0;
+              // if person can work in this position
+              var namePositionElem = $('#name-position-' + a + '-' + d);
+              var canWorkPosition = namePositionElem.is(':checked');
+              if (canWorkPosition) maxval = 1;
+              else maxval = 0;
+            }
+            var line = setMinMax(a, b, c, d, minval, maxval);
+            str = println(str, line);
+          }
+        }
+      }
+    }
+    
+    str = println(str, 'Generals')
+    for (var a = 0; a < personCount; a++) {
+      for (var b = 0; b < dayCount; b++) {
+        for (var c = 0; c < SHIFTS.length; c++) {
+          for (var d = 0; d < MAX_SLOTS[c]; d++) {
+            line = 'x_' + a + '_' + b + '_' + c + '_' + d;
+            str = println(str, line);
+          }
+        }
+      }
+    }
+    
+    str = println(str, 'End')
       
     return str;
   }
   
-  function calculateResult() {
+  
+  function setMinMax(a, b, c, d, minval, maxval) {
+    return minval + ' <= x_' + a + '_' + b + '_' + c + '_' + d + ' <= ' + maxval;
+  }
+  
+  function getVariableId(a, b, c, d) {
+    return 'x_' + a + '_' + b + '_' + c + '_' + d;
+  }
+  
+  function createResultTable(result) {
+    var tableElem = $('#result-table');
+    tableElem.empty();
     
+    var allPersonNames = getAllPersonNames();
+    var allPositionNames = getAllPositionNames();
+    var allDateStrings = getAllDateStrings();
+    var personCount = allPersonNames.length;
+    var dayCount = allDateStrings.length;
+    
+    // generate header
+    var inHtml = '<tr><th>시간/position</th>';
+    for (var i = 0; i < allDateStrings.length; i++) {
+      inHtml += '<th>' + allDateStrings[i] + '</th>';
+    }
+    inHtml += '</tr>';
+    
+    // generate content
+    for (var shift = 0; shift < SHIFTS.length; shift++) {
+      for (var position = 0; position < MAX_SLOTS[shift]; position++) {
+        inHtml += '<tr><td>' + SHIFTS[shift];
+        if (shift != PRN_INDEX) inHtml += allPositionNames[position];
+        inHtml += '</td>';
+        
+        // iterate by date and fill out.
+        for (var day = 0; day < dayCount; day++) {
+          inHtml += '<td>';
+          for (var person = 0; person < personCount; person++) {
+            var variableId = getVariableId(person, day, shift, position);
+            if (result[variableId]) {
+              inHtml += allPersonNames[person];
+            }
+          }
+          inHtml += '</td>';
+        }
+        
+        inHtml += '</tr>';
+      }
+    }
+    tableElem.html(inHtml);
+  }
+  
+  function renderResultPage() {
+    $('#process-area').empty();
+    $('#result-table').empty();
+  }
+  
+  function calculateResult() {
+    $('#process-area').empty();
+    
+    addToResultPanel('generating...');
     var data = generateMathProgString();
     var lp;
 
+    //addToResultPanel(data.split('\n').join('<br/>'));
+    
     glp_set_print_func(addToResultPanel);
 
     var result = {}, objective, i;
+    addToResultPanel('starting...');
     try {
         lp = glp_create_prob();
         glp_read_lp_from_string(lp, null, data);
@@ -278,7 +502,9 @@ $(function() {
     } catch(err) {
         addToResultPanel(err.message);
     } finally {
-        addToResultPanel('result' + JSON.stringify(result) + ', objective: ' + objective);
+      addToResultPanel('테이블을 만들고 있습니다');
+      createResultTable(result);
+      $('#process-area').empty();
     }            
   }
   
@@ -293,6 +519,7 @@ $(function() {
   });
   
   $('.to-result').click(function(e) {
+    renderResultPage();
     moveToPage('page-result');
     var millisecondsToWait = 1000;
     setTimeout(function() {
