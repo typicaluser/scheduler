@@ -74,77 +74,77 @@
             </tr>
             <tr>
               <td>1</td>
-              <td><input id="name1" type="text"></td>
+              <td><input id="name1" type="text" value="박민지"></td>
               <td><input id="hour1" type="number" min="0" max="999"></td>
             </tr>
             <tr>
               <td>2</td>
-              <td><input id="name2" type="text"></td>
+              <td><input id="name2" type="text" value="백소현"></td>
               <td><input id="hour2" type="number" min="0" max="999"></td>
             </tr>
             <tr>
               <td>3</td>
-              <td><input id="name3" type="text"></td>
+              <td><input id="name3" type="text" value="권준명"></td>
               <td><input id="hour3" type="number" min="0" max="999"></td>
             </tr>
             <tr>
               <td>4</td>
-              <td><input id="name4" type="text"></td>
+              <td><input id="name4" type="text" value="허주연"></td>
               <td><input id="hour4" type="number" min="0" max="999"></td>
             </tr>
             <tr>
               <td>5</td>
-              <td><input id="name5" type="text"></td>
+              <td><input id="name5" type="text" value="정지혜"></td>
               <td><input id="hour5" type="number" min="0" max="999"></td>
             </tr>
             <tr>
               <td>6</td>
-              <td><input id="name6" type="text"></td>
+              <td><input id="name6" type="text" value="이상민"></td>
               <td><input id="hour6" type="number" min="0" max="999"></td>
             </tr>
             <tr>
               <td>7</td>
-              <td><input id="name7" type="text"></td>
+              <td><input id="name7" type="text" value="박준교"></td>
               <td><input id="hour7" type="number" min="0" max="999"></td>
             </tr>
             <tr>
               <td>8</td>
-              <td><input id="name8" type="text"></td>
+              <td><input id="name8" type="text" value="최영호"></td>
               <td><input id="hour8" type="number" min="0" max="999"></td>
             </tr>
             <tr>
               <td>9</td>
-              <td><input id="name9" type="text"></td>
+              <td><input id="name9" type="text" value="김병현"></td>
               <td><input id="hour9" type="number" min="0" max="999"></td>
             </tr>
             <tr>
               <td>10</td>
-              <td><input id="name10" type="text"></td>
+              <td><input id="name10" type="text" value="강샛별"></td>
               <td><input id="hour10" type="number" min="0" max="999"></td>
             </tr>
             <tr>
               <td>11</td>
-              <td><input id="name11" type="text"></td>
+              <td><input id="name11" type="text" value="정현정"></td>
               <td><input id="hour11" type="number" min="0" max="999"></td>
             </tr>
             <tr>
               <td>12</td>
-              <td><input id="name12" type="text"></td>
+              <td><input id="name12" type="text" value=""></td>
               <td><input id="hour12" type="number" min="0" max="999"></td>
             </tr>
             <tr>
               <td>13</td>
-              <td><input id="name13" type="text"></td>
+              <td><input id="name13" type="text" value=""></td>
               <td><input id="hour13" type="number" min="0" max="999"></td>
             </tr>
             <tr>
               <td>14</td>
-              <td><input id="name14" type="text"></td>
+              <td><input id="name14" type="text" value=""></td>
               <td><input id="hour14" type="number" min="0" max="999"></td>
             </tr>
             <tr>
               <td>15</td>
-              <td><input id="name15" type="text"></td>
+              <td><input id="name15" type="text" value=""></td>
               <td><input id="hour15" type="number" min="0" max="999"></td>
             </tr>
           </table>
@@ -159,7 +159,7 @@
         <h1>상세 설정</h1>
         <fieldset class="settings name-positions-settings">
           <legend>가능한 position</legend>
-          <table class="name-positions-table">
+          <table id="name-positions-table">
             <tr>
               <th>이름</th>
               <th>position 1</th>
@@ -176,7 +176,7 @@
         
         <fieldset class="settings name-vacations-settings">
           <legend>일하기 싫은 시간을 정해주세요</legend>
-          <table class="name-vacations-table">
+          <table id="name-vacations-table">
             <tr>
               <th>날짜/시간</th>
               <th>사람 이름 1</th>
@@ -203,7 +203,7 @@
         <fieldset class="settings name-must-works-settings">
           <legend>일하고 싶은 시간을 정해주세요</legend>
 
-          <table class="name-must-works-table">
+          <table id="name-must-works-table">
             <tr>
               <th>날짜/시간</th>
               <th>사람 이름 1</th>
@@ -227,9 +227,9 @@
           </table>
         </fieldset>
 
-        <fieldset class="settings prn-must-settings">
+        <fieldset class="settings prn-must-settings" style="display:none">
           <legend>prn이 꼭 있어야 하는 날을 정해주세요</legend>
-          <table class="prn-must-table">
+          <table id="prn-must-table">
             <tr>
               <th>날짜</th>
               <th>prn 꼭 있음</th>
@@ -258,49 +258,54 @@
       
       
       <div id="page-result" class="page">
-        <legend>결과</legend>
-        <table class="result-table">
-          <tr>
-            <th>시간/position</th>
-            <th>6월 1일(일)</th>
-            <th>6월 2일(월)</th>
-          </tr>
-          <tr>
-            <td>낮 position 1</td>
-            <td>사람 이름 1</td>
-            <td>사람 이름 2</td>
-          </tr>
-          <tr>
-            <td>낮 position 2</td>
-            <td>사람 이름 1</td>
-            <td>사람 이름 2</td>
-          </tr>
-          <tr>
-            <td>낮 position 3</td>
-            <td>사람 이름 1</td>
-            <td>사람 이름 2</td>
-          </tr>
-          <tr>
-            <td>밤 position 1</td>
-            <td>사람 이름 1</td>
-            <td>사람 이름 2</td>
-          </tr>
-          <tr>
-            <td>밤 position 2</td>
-            <td>사람 이름 1</td>
-            <td>사람 이름 2</td>
-          </tr>
-          <tr>
-            <td>밤 position 3</td>
-            <td>사람 이름 1</td>
-            <td>사람 이름 2</td>
-          </tr>
-          <tr>
-            <td>prn</td>
-            <td>사람 이름 1</td>
-            <td>사람 이름 2</td>
-          </tr>
-        </table>
+        <fieldset>
+          <legend>결과</legend>
+          <div id="process-area">
+            <p>계산중입니다.</p>
+          </div>
+          <table class="result-table">
+            <tr>
+              <th>시간/position</th>
+              <th>6월 1일(일)</th>
+              <th>6월 2일(월)</th>
+            </tr>
+            <tr>
+              <td>낮 position 1</td>
+              <td>사람 이름 1</td>
+              <td>사람 이름 2</td>
+            </tr>
+            <tr>
+              <td>낮 position 2</td>
+              <td>사람 이름 1</td>
+              <td>사람 이름 2</td>
+            </tr>
+            <tr>
+              <td>낮 position 3</td>
+              <td>사람 이름 1</td>
+              <td>사람 이름 2</td>
+            </tr>
+            <tr>
+              <td>밤 position 1</td>
+              <td>사람 이름 1</td>
+              <td>사람 이름 2</td>
+            </tr>
+            <tr>
+              <td>밤 position 2</td>
+              <td>사람 이름 1</td>
+              <td>사람 이름 2</td>
+            </tr>
+            <tr>
+              <td>밤 position 3</td>
+              <td>사람 이름 1</td>
+              <td>사람 이름 2</td>
+            </tr>
+            <tr>
+              <td>prn</td>
+              <td>사람 이름 1</td>
+              <td>사람 이름 2</td>
+            </tr>
+          </table>
+        </fieldset>
         <div>
           <button class="to-page2">이전</button>
         </div>
