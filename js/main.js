@@ -1,7 +1,8 @@
 var WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
 var SHIFTS = ['day', 'night', 'prn'];
+var MAX_SLOTS = [3, 3, 1]; // persons to work in day, night, prn
 var POSITION_COUNT = 4;
-var PERSON_COUNT = 15;
+var TOTAL_PERSON_FIELD_COUNT = 15;
 
 $(function() {
   function moveToPage(pageName) {
@@ -22,7 +23,7 @@ $(function() {
   
   function getAllPersonNames() {
     var allNames = [];
-    for (var i = 1; i <= PERSON_COUNT; i++) {
+    for (var i = 1; i <= TOTAL_PERSON_FIELD_COUNT; i++) {
       var name = $('#name' + i).val().trim();
       if (name) {
         var hour = parseInt($('#hour' + i).val());
@@ -34,7 +35,7 @@ $(function() {
   
   function getAllHours() {
     var allHours = [];
-    for (var i = 1; i <= PERSON_COUNT; i++) {
+    for (var i = 1; i <= TOTAL_PERSON_FIELD_COUNT; i++) {
       var name = $('#name' + i).val().trim();
       if (name) {
         var hour = parseInt($('#hour' + i).val());
@@ -173,9 +174,81 @@ $(function() {
     
   }
   
+  function getVariables() {
+    // x_a_b_c:
+  }
+  
+  function println(str, line) {
+    str += line + '\n';
+  }
+  
+  function formatVar(a, b, c, d) {
+    return '+ 1 x_' + a + '_' + b + '_' + c + '_' + d + ' ';
+  }
+  
   function generateMathProgString() {
-    // generate MathProg string
-    return 'Maximize\nobj: + 786433 x1 + 655361 x2 + 589825 x3 + 557057 x4\n+ 540673 x5 + 532481 x6 + 528385 x7 + 526337 x8 + 525313 x9\n+ 524801 x10 + 524545 x11 + 524417 x12 + 524353 x13\n+ 524321 x14 + 524305 x15\n\nSubject To\ncap: + 786433 x1 + 655361 x2 + 589825 x3 + 557057 x4\n+ 540673 x5 + 532481 x6 + 528385 x7 + 526337 x8 + 525313 x9\n+ 524801 x10 + 524545 x11 + 524417 x12 + 524353 x13\n+ 524321 x14 + 524305 x15 <= 4194303.5\n\nBounds\n0 <= x1 <= 1\n0 <= x2 <= 1\n0 <= x3 <= 1\n0 <= x4 <= 1\n0 <= x5 <= 1\n0 <= x6 <= 1\n0 <= x7 <= 1\n0 <= x8 <= 1\n0 <= x9 <= 1\n0 <= x10 <= 1\n0 <= x11 <= 1\n0 <= x12 <= 1\n0 <= x13 <= 1\n0 <= x14 <= 1\n0 <= x15 <= 1\n\nGenerals\nx1\nx2\nx3\nx4\nx5\nx6\nx7\nx8\nx9\nx10\nx11\nx12\nx13\nx14\nx15\n\nEnd\n\n';
+    var allHours = getAllHours();
+    var personCount = getAllPersonNames().length;
+    var positionCount = getAllPositionNames().length;
+    var dayCount = getTotalDays();
+    
+    var str = '';
+    
+    // generate objective string
+    println(str, 'Maximize');
+    var line = 'obj: ';
+    for (var a = 0; a < personCount; a++) {
+      for (var b = 0; b < dayCount; b++) {
+        var c = 2;
+        for (var d = 0; d < MAX_SLOTS[c]; d++) {
+          line += formatVar(a, b, c, d);
+        }
+      }
+    }
+    println(str, line);
+    
+    // generate subject to string
+    println(str, 'Subject To');
+    
+    // 1. per-person total work
+    for (var a = 0; a < personCount; a++) {
+      var line = 'total_' + a + '_max: ';
+      for (var b = 0; b < dayCount; b++) {
+        for (var c = 0; c < SHIFTS.length; c++) {
+          for (var d = 0; d < MAX_SLOTS[c]; d++) {
+            line += formatVar(a, b, c, d);
+          }
+        }
+      }
+      line += ' <= ' + allHours[a];
+      println(str, line);
+    }
+    
+    // 2. cannot work more than once in the same day
+    for (var a = 0; a < personCount; a++) {
+      for (var b = 0; b < dayCount; b++) {
+        var line = 'nextday_' + a + '_' + b + ': ';
+        for (var c = 0; c <= SHIFTS.length; c++) {
+          for (var d = 0; d < MAX_SLOTS[c]; d++) {
+            line += formatVar(a, b, c, d);
+          }
+        }
+        line += '<= 1';
+        println(line);
+      }
+    }
+    
+    // 3. cannot work more than once night-prn-day
+    for (var a = 0; a < personCount; a++) {
+      for (var b = 0; b < )
+    }
+    
+      
+      
+      
+      
+      
+    return str;
   }
   
   function calculateResult() {
