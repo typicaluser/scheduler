@@ -401,9 +401,9 @@ $(function() {
     // 11. Maximum n consecutive nights
     var maxConsecutiveNight = $('#max-consecutive-night').val();
     for (var a = 0; a < personCount; a++) {
-      for (var b = 0; b < dayCount-maxConsecutiveNight; b++) {
+      for (var b = 0; b < dayCount-maxConsecutiveNight-1; b++) {
         var line = 'consecutive_night_' + a + '_' + b + ': ';
-        for (var day = 0; day < maxConsecutiveNight; day++) {
+        for (var day = 0; day <= maxConsecutiveNight; day++) {
           for (var d = 0; d < MAX_SLOTS[NIGHT_INDEX]; d++) {
             line += formatVar(a, b+day, NIGHT_INDEX, d);
           }
