@@ -184,27 +184,86 @@ $(function() {
   }
   
   function addToResultPanel(message) {
-    var millisecondsToWait = 1000;
-    setTimeout(function() {
-      var inHtml = '<p>' + message + '</p>';
-      $('#process-area').append(inHtml);
-    }, millisecondsToWait);
+    var inHtml = '<p>' + message + '</p>';
+    $('#process-area').append(inHtml);
+  }
+  
+  function getVariableId(a, b, c, d) {
+    return 'x_' + a + '_' + b + '_' + c + '_' + d;
+  }
+  
+  function createResultTable(result) {
+    var tableElem = $('#result-table');
+    tableElem.empty();
     
+    var allPersonNames = getAllPersonNames();
+    var allPositionNames = getAllPositionNames();
+    var allDateStrings = getAllDateStrings();
+    var personCount = allPersonNames.length;
+    var dayCount = allDateStrings.length;
+    
+    // generate header
+    var inHtml = '<tr><th>시간/position</th>';
+    for (var i = 0; i < allDateStrings.length; i++) {
+      inHtml += '<th>' + allDateStrings[i] + '</th>';
+    }
+    inHtml += '</tr>';
+    
+    // generate content
+    for (var shift = 0; shift < SHIFTS.length; shift++) {
+      for (var position = 0; position < MAX_SLOTS[shift]; position++) {
+        inHtml += '<tr><td>' + SHIFTS[shift];
+        if (shift != PRN_INDEX) inHtml += allPositionNames[position];
+        inHtml += '</td>';
+        
+        // iterate by date and fill out.
+        for (var day = 0; day < dayCount; day++) {
+          inHtml += '<td>';
+          for (var person = 0; person < personCount; person++) {
+            var variableId = getVariableId(person, day, shift, position);
+            if (result[variableId]) {
+              inHtml += allPersonNames[person];
+            }
+          }
+          inHtml += '</td>';
+        }
+        
+        inHtml += '</tr>';
+      }
+    }
+    tableElem.html(inHtml);
+  }
+  
+  function renderResultPage() {
+    var processArea = $('#process-area');
+    processArea.empty();
+    processArea.append('<p>계산을 시작하려면 시작버튼을 누르세요.</p>');
+    processArea.append('<p>몇 분 걸릴 수 있습니다.</p>');
+    processArea.append('<p>중간에 나오는 영어는 안보셔도 되요.</p>');
+    $('#result-table').empty();
+    var calButton = $('#calculate-button');
+    calButton.text('계산시작');
+    calButton.off('click');
+    calButton.click(run);
   }
   
   function setMax(line, maxValue) {
     return line + ' <= ' + maxValue;
   }
-  
+
   function println(str, line) {
     str += line + '\n';
     return str;
   }
-  
+
   function formatVar(a, b, c, d) {
     return '+ 1 x_' + a + '_' + b + '_' + c + '_' + d + ' ';
+  } 
+
+  function setMinMax(a, b, c, d, minval, maxval) {
+    return minval + ' <= x_' + a + '_' + b + '_' + c + '_' + d + ' <= ' + maxval;
   }
-  
+
   function generateMathProgString() {
     var allHours = getAllHours();
     var personCount = getAllPersonNames().length;
@@ -356,7 +415,6 @@ $(function() {
     
     
     // Bounds
-    
     str = println(str, 'Bounds')
     for (var a = 0; a < personCount; a++) {
       for (var b = 0; b < dayCount; b++) {
@@ -414,99 +472,43 @@ $(function() {
     return str;
   }
   
+  var job;
   
-  function setMinMax(a, b, c, d, minval, maxval) {
-    return minval + ' <= x_' + a + '_' + b + '_' + c + '_' + d + ' <= ' + maxval;
-  }
-  
-  function getVariableId(a, b, c, d) {
-    return 'x_' + a + '_' + b + '_' + c + '_' + d;
-  }
-  
-  function createResultTable(result) {
-    var tableElem = $('#result-table');
-    tableElem.empty();
-    
-    var allPersonNames = getAllPersonNames();
-    var allPositionNames = getAllPositionNames();
-    var allDateStrings = getAllDateStrings();
-    var personCount = allPersonNames.length;
-    var dayCount = allDateStrings.length;
-    
-    // generate header
-    var inHtml = '<tr><th>시간/position</th>';
-    for (var i = 0; i < allDateStrings.length; i++) {
-      inHtml += '<th>' + allDateStrings[i] + '</th>';
-    }
-    inHtml += '</tr>';
-    
-    // generate content
-    for (var shift = 0; shift < SHIFTS.length; shift++) {
-      for (var position = 0; position < MAX_SLOTS[shift]; position++) {
-        inHtml += '<tr><td>' + SHIFTS[shift];
-        if (shift != PRN_INDEX) inHtml += allPositionNames[position];
-        inHtml += '</td>';
-        
-        // iterate by date and fill out.
-        for (var day = 0; day < dayCount; day++) {
-          inHtml += '<td>';
-          for (var person = 0; person < personCount; person++) {
-            var variableId = getVariableId(person, day, shift, position);
-            if (result[variableId]) {
-              inHtml += allPersonNames[person];
-            }
-          }
-          inHtml += '</td>';
-        }
-        
-        inHtml += '</tr>';
+  function run(){
+    job = new Worker('js/solver.js');
+    job.onmessage = function (e) {
+      var obj = e.data;
+      switch (obj.action){
+        case 'log':
+          addToResultPanel(obj.message);
+          break;
+        case 'done':
+          stop();
+          var processArea = $('#process-area');
+          processArea.empty();
+          $('#result-table').empty();
+          //addToResultPanel(JSON.stringify(obj.result));
+          createResultTable(obj.result);
+          break;
       }
-    }
-    tableElem.html(inHtml);
+    };
+
+    var calButton = $('#calculate-button');
+    calButton.text('중지');
+    calButton.off('click');
+    calButton.click(stop);
+    job.postMessage({action: 'load', data: generateMathProgString(), mip: true});
   }
-  
-  function renderResultPage() {
-    $('#process-area').empty();
-    $('#result-table').empty();
+
+  function stop(){
+    job.terminate();
+    job = null;
+    var calButton = $('#calculate-button');
+    calButton.text('계산 시작');
+    calButton.off('click');
+    calButton.click(run);
   }
-  
-  function calculateResult() {
-    $('#process-area').empty();
-    
-    addToResultPanel('generating...');
-    var data = generateMathProgString();
-    var lp;
 
-    //addToResultPanel(data.split('\n').join('<br/>'));
-    
-    glp_set_print_func(addToResultPanel);
-
-    var result = {}, objective, i;
-    addToResultPanel('starting...');
-    try {
-        lp = glp_create_prob();
-        glp_read_lp_from_string(lp, null, data);
-
-        glp_scale_prob(lp, GLP_SF_AUTO);
-
-        var smcp = new SMCP({presolve: GLP_ON});
-        glp_simplex(lp, smcp);
-
-        glp_intopt(lp);
-        objective = glp_mip_obj_val(lp);
-        for(i = 1; i <= glp_get_num_cols(lp); i++){
-            result[glp_get_col_name(lp, i)] = glp_mip_col_val(lp, i);
-        }
-
-        lp = null;
-    } catch(err) {
-        addToResultPanel(err.message);
-    } finally {
-      addToResultPanel('테이블을 만들고 있습니다');
-      createResultTable(result);
-      $('#process-area').empty();
-    }            
-  }
   
   $('.to-page1').click(function(e) {
     renderPage1();
@@ -518,13 +520,17 @@ $(function() {
     moveToPage('page2');
   });
   
+  $('.from-result-to-page2').click(function(e) {
+    if (job) {
+      stop();
+      job = null;
+    }
+    moveToPage('page2');
+  });
+  
   $('.to-result').click(function(e) {
     renderResultPage();
     moveToPage('page-result');
-    var millisecondsToWait = 1000;
-    setTimeout(function() {
-        calculateResult();
-    }, millisecondsToWait);
   });
   
   renderPage1();
