@@ -31,6 +31,9 @@
                    min="1" max="7" value="3"/>
             7일간 최고 연속한 night 개수
           </div>
+          <div>
+            <input id="prn-exists" type="checkbox" checked/>prn 있음
+          </div>
         </fieldset> 
 
         
@@ -181,77 +184,17 @@
         
         <fieldset class="settings name-vacations-settings">
           <legend>일하기 싫은 시간을 정해주세요</legend>
-          <table id="name-vacations-table">
-            <tr>
-              <th>날짜/시간</th>
-              <th>사람 이름 1</th>
-              <th>사람 이름 2</th>
-            </tr>
-            <tr>
-              <td>6월 2일 (월) day</td>
-              <td><input type="checkbox" name="x_1_work"></td>
-              <td><input type="checkbox" name="x_2_work"></td>
-            </tr>
-            <tr>
-              <td>6월 2일 (월) night</td>
-              <td><input type="checkbox" name="x_1_work"></td>
-              <td><input type="checkbox" name="x_2_work"></td>
-            </tr>
-            <tr>
-              <td>6월 2일 (월) prn</td>
-              <td><input type="checkbox" name="x_1_work"></td>
-              <td><input type="checkbox" name="x_2_work"></td>
-            </tr>
-          </table>
+          <table id="name-vacations-table"></table>
         </fieldset>
 
         <fieldset class="settings name-must-works-settings">
           <legend>일하고 싶은 시간을 정해주세요</legend>
-
-          <table id="name-must-works-table">
-            <tr>
-              <th>날짜/시간</th>
-              <th>사람 이름 1</th>
-              <th>사람 이름 2</th>
-            </tr>
-            <tr>
-              <td>6월 2일 (월) day</td>
-              <td><input type="checkbox" name="x_1_work"></td>
-              <td><input type="checkbox" name="x_2_work"></td>
-            </tr>
-            <tr>
-              <td>6월 2일 (월) night</td>
-              <td><input type="checkbox" name="x_1_work"></td>
-              <td><input type="checkbox" name="x_2_work"></td>
-            </tr>
-            <tr>
-              <td>6월 2일 (월) prn</td>
-              <td><input type="checkbox" name="x_1_work"></td>
-              <td><input type="checkbox" name="x_2_work"></td>
-            </tr>
-          </table>
+          <table id="name-must-works-table"></table>
         </fieldset>
 
         <fieldset class="settings prn-must-settings">
           <legend>prn이 꼭 있어야 하는 날을 정해주세요</legend>
-          <table id="prn-must-table">
-            <tr>
-              <th>날짜</th>
-              <th>prn 있어야 함?</th>
-            </tr>
-            <tr>
-              <td>6월 2일 (월)</td>
-              <td><input type="checkbox" name="x_1_work"></td>
-            </tr>
-            <tr>
-              <td>6월 3일 (화)</td>
-              <td><input type="checkbox" name="x_1_work"></td>
-            </tr>
-            <tr>
-              <td>6월 4일 (수) prn</td>
-              <td><input type="checkbox" name="x_1_work"></td>
-            </tr>
-          </table>
+          <table id="prn-must-table"></table>
         </fieldset>
         <div>
           <button class="to-page1">이전</button>
@@ -274,6 +217,8 @@
           <table id="result-table">
           </table>
         </fieldset>
+        <div id="query">
+        </div>
         <div>
           <button class="from-result-to-page2">이전</button>
           <button id="calculate-button">계산 시작</button>

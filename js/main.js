@@ -15,6 +15,10 @@ $(function() {
     $('#' + pageName).show();
   }
   
+  function prnExists() {
+    return $('#prn-exists').prop('checked');
+  }
+  
   function getAllPositionNames() {
     var allPositions = [];
     for (var i = 1; i <= TOTAL_POSITION_FIELD_COUNT; i++) {
@@ -51,11 +55,7 @@ $(function() {
   }
   
   function getTotalDays() {
-    var scheduleYear = parseInt($('#schedule-start-year').val());
-    var scheduleMonth = parseInt($('#schedule-start-month').val());
-    // total number of days in the selected month
-    var totalDays = new Date(scheduleYear, scheduleMonth, 0).getDate();
-    return totalDays;
+    return getAllDateStrings().length;
   }
   
   function getAllDateStrings() {
@@ -136,7 +136,9 @@ $(function() {
     // render name-vacation table content
     for (var i = 0; i < allDateStrings.length; i++) {
       var dateString = allDateStrings[i];
-      for (var j = 0; j < SHIFTS.length; j++) {
+      var maxShiftLength = prnExists() ? SHIFTS.length : SHIFTS.length - 1;
+      
+      for (var j = 0; j < maxShiftLength; j++) {
         inHtml += '<tr><td>' + dateString + ' ' + SHIFTS[j] + '</td>';
         for (var k = 0; k < allPersonNames.length; k++) {
           inHtml += '<td><input id="name-vacation-' + k + '-' + i + '-' + j
@@ -163,7 +165,8 @@ $(function() {
     // render name-must-work table content
     for (var i = 0; i < allDateStrings.length; i++) {
       var dateString = allDateStrings[i];
-      for (var j = 0; j < SHIFTS.length; j++) {
+      var maxShiftLength = prnExists() ? SHIFTS.length : SHIFTS.length - 1;
+      for (var j = 0; j < maxShiftLength; j++) {
         inHtml += '<tr><td>' + dateString + ' ' + SHIFTS[j] + '</td>';
         for (var k = 0; k < allPersonNames.length; k++) {
           inHtml += '<td><input id="name-must-work-' + k + '-' + i + '-' + j
@@ -198,7 +201,12 @@ $(function() {
     renderNamePositionTable(allPositions, allPersonNames);
     renderNameVacationTable(allPersonNames, allDateStrings);
     renderNameMustWorkTable(allPersonNames, allDateStrings);
-    renderPrnMustTable(allDateStrings);
+    if (prnExists()) {
+      renderPrnMustTable(allDateStrings); 
+    }
+    else {
+      $('.prn-must-settings').remove();
+    }
   }
   
   function addToResultPanel(message) {
@@ -228,7 +236,8 @@ $(function() {
     inHtml += '</tr>';
     
     // generate content
-    for (var shift = 0; shift < SHIFTS.length; shift++) {
+    var maxShiftLength = prnExists() ? SHIFTS.length : SHIFTS.length - 1;
+    for (var shift = 0; shift < maxShiftLength; shift++) {
       for (var position = 0; position < MAX_SLOTS[shift]; position++) {
         inHtml += '<tr><td>' + SHIFTS[shift];
         if (shift != PRN_INDEX) inHtml += allPositionNames[position];
@@ -287,6 +296,8 @@ $(function() {
     var personCount = getAllPersonNames().length;
     var positionCount = getAllPositionNames().length;
     var dayCount = getTotalDays();
+    var maxShiftLength = prnExists() ? SHIFTS.length : SHIFTS.length - 1;
+    
     
     var str = '';
     
@@ -302,7 +313,7 @@ $(function() {
     var line = 'obj: ';
     for (var a = 0; a < personCount; a++) {
       for (var b = 0; b < dayCount; b++) {
-        var c = 2;
+        var c = prnExists() ? 2 : 1;
         for (var d = 0; d < MAX_SLOTS[c]; d++) {
           line += formatVar(a, b, c, d);
         }
@@ -317,7 +328,7 @@ $(function() {
     for (var a = 0; a < personCount; a++) {
       var line = 'total_' + a + '_max: ';
       for (var b = 0; b < dayCount; b++) {
-        for (var c = 0; c < SHIFTS.length; c++) {
+        for (var c = 0; c < maxShiftLength; c++) {
           for (var d = 0; d < MAX_SLOTS[c]; d++) {
             line += formatVar(a, b, c, d);
           }
@@ -331,7 +342,7 @@ $(function() {
     for (var a = 0; a < personCount; a++) {
       for (var b = 0; b < dayCount; b++) {
         var line = 'sameday_' + a + '_' + b + ': ';
-        for (var c = 0; c <= SHIFTS.length; c++) {
+        for (var c = 0; c < maxShiftLength; c++) {
           for (var d = 0; d < MAX_SLOTS[c]; d++) {
             line += formatVar(a, b, c, d);
           }
@@ -341,35 +352,37 @@ $(function() {
       }
     }
     
-    // 3. cannot work more than once (night or prn)->(day of tomorrow)
-    for (var a = 0; a < personCount; a++) {
-      for (var b = 0; b < dayCount-1; b++) {
-        var line = 'nextday_' + a + '_' + b + ': ';
-        for (var c = NIGHT_INDEX; c <= PRN_INDEX; c++) { // night, prn of today
-          for (var d = 0; d < MAX_SLOTS[c]; d++) {
-            line += formatVar(a, b, c, d);
+    if (prnExists()) {
+      // 3. cannot work more than once (night or prn)->(day of tomorrow)
+      for (var a = 0; a < personCount; a++) {
+        for (var b = 0; b < dayCount-1; b++) {
+          var line = 'nextday_' + a + '_' + b + ': ';
+          for (var c = NIGHT_INDEX; c <= PRN_INDEX; c++) { // night, prn of today
+            for (var d = 0; d < MAX_SLOTS[c]; d++) {
+              line += formatVar(a, b, c, d);
+            }
           }
+          for (var d = 0; d < MAX_SLOTS[DAY_INDEX]; d++) { // day of tomorrow
+            line += formatVar(a, b+1, 0, d);
+          }
+          line = setMax(line, 1);
+          str = println(str, line);
         }
-        for (var d = 0; d < MAX_SLOTS[DAY_INDEX]; d++) { // day of tomorrow
-          line += formatVar(a, b+1, 0, d);
-        }
-        line = setMax(line, 1);
-        str = println(str, line);
       }
-    }
-    
-    // 4. cannot work more than once (night) -> (prn of tomorrow)
-    for (var a = 0; a < personCount; a++) {
-      for (var b = 0; b < dayCount-1; b++) {
-        var line = 'no_prn_after_night_' + a + '_' + b + ': ';
-        for (var d = 0; d < MAX_SLOTS[NIGHT_INDEX]; d++) { // night of today
-          line += formatVar(a, b, 1, d);
+
+      // 4. cannot work more than once (night) -> (prn of tomorrow)
+      for (var a = 0; a < personCount; a++) {
+        for (var b = 0; b < dayCount-1; b++) {
+          var line = 'no_prn_after_night_' + a + '_' + b + ': ';
+          for (var d = 0; d < MAX_SLOTS[NIGHT_INDEX]; d++) { // night of today
+            line += formatVar(a, b, 1, d);
+          }
+          for (var d = 0; d < MAX_SLOTS[PRN_INDEX]; d++) { // prn of tomorrow
+            line += formatVar(a, b+1, 2, d);
+          }
+          line = setMax(line, 1);
+          str = println(str, line);
         }
-        for (var d = 0; d < MAX_SLOTS[PRN_INDEX]; d++) { // prn of tomorrow
-          line += formatVar(a, b+1, 2, d);
-        }
-        line = setMax(line, 1);
-        str = println(str, line);
       }
     }
     
@@ -387,16 +400,18 @@ $(function() {
       }
     }
     
-    // 6. someone should work at some prn and may not work at some prn
-    for (var b = 0; b < dayCount; b++) {
-      var line = 'prn_work_' + b + '_' + PRN_INDEX + '_0: ';
-      for (var a = 0; a < personCount; a++) {
-        line += formatVar(a, b, PRN_INDEX, 0);
+    if (prnExists()) {
+      // 6. someone should work at some prn and may not work at some prn
+      for (var b = 0; b < dayCount; b++) {
+        var line = 'prn_work_' + b + '_' + PRN_INDEX + '_0: ';
+        for (var a = 0; a < personCount; a++) {
+          line += formatVar(a, b, PRN_INDEX, 0);
+        }
+        var mustPrn = $('#must-prn-' + b).is(':checked');
+        if (mustPrn) line += ' = 1';
+        else line = setMax(line, 1);
+        str = println(str, line);
       }
-      var mustPrn = $('#must-prn-' + b).is(':checked');
-      if (mustPrn) line += ' = 1';
-      else line = setMax(line, 1);
-      str = println(str, line);
     }
     
     // skip 7, 8, 9: they will be covered in Bounds
@@ -436,7 +451,7 @@ $(function() {
     str = println(str, 'Bounds')
     for (var a = 0; a < personCount; a++) {
       for (var b = 0; b < dayCount; b++) {
-        for (var c = 0; c < SHIFTS.length; c++) {
+        for (var c = 0; c < maxShiftLength; c++) {
           // ASSUME NO INCONSISTENCY!!!
           // if person should work
           var shouldWork = $('#name-must-work-' + a + '-' + b + '-' + c).is(':checked');
@@ -476,7 +491,7 @@ $(function() {
     str = println(str, 'Generals')
     for (var a = 0; a < personCount; a++) {
       for (var b = 0; b < dayCount; b++) {
-        for (var c = 0; c < SHIFTS.length; c++) {
+        for (var c = 0; c < maxShiftLength; c++) {
           for (var d = 0; d < MAX_SLOTS[c]; d++) {
             line = 'x_' + a + '_' + b + '_' + c + '_' + d;
             str = println(str, line);
@@ -486,7 +501,7 @@ $(function() {
     }
     
     str = println(str, 'End')
-      
+    
     return str;
   }
   
