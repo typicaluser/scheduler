@@ -51,8 +51,8 @@ $(function() {
   }
   
   function getTotalDays() {
-    var scheduleYear = parseInt($('#schedule-year').val());
-    var scheduleMonth = parseInt($('#schedule-month').val());
+    var scheduleYear = parseInt($('#schedule-start-year').val());
+    var scheduleMonth = parseInt($('#schedule-start-month').val());
     // total number of days in the selected month
     var totalDays = new Date(scheduleYear, scheduleMonth, 0).getDate();
     return totalDays;
@@ -60,16 +60,30 @@ $(function() {
   
   function getAllDateStrings() {
     var dateStrings = [];
-    var scheduleYear = parseInt($('#schedule-year').val());
-    var scheduleMonth = parseInt($('#schedule-month').val());
-    // total number of days in the selected month
-    var totalDays = new Date(scheduleYear, scheduleMonth, 0).getDate();
-    for (var i = 1; i <= totalDays; i++) {
-      var weekday = new Date(scheduleYear, scheduleMonth-1, i).getDay();
+    var startYear = parseInt($('#schedule-start-year').val());
+    var startMonth = parseInt($('#schedule-start-month').val());
+    var startDay = parseInt($('#schedule-start-day').val());
+    
+    var endYear = parseInt($('#schedule-end-year').val());
+    var endMonth = parseInt($('#schedule-end-month').val());
+    var endDay = parseInt($('#schedule-end-day').val());
+    
+    var startDate = new Date(startYear, startMonth - 1, startDay, 0, 0, 0, 0);
+    var endDate = new Date(endYear, endMonth - 1, endDay, 0, 0, 0, 0);
+    var increment = 24 * 60 * 60 * 1000;
+    
+    var currentDate = startDate;
+    
+    while (currentDate.getTime() <= endDate.getTime()) {
+      var weekday = currentDate.getDay();
       var weekdayKor = WEEKDAYS[weekday];
-      var dateString = '' + scheduleMonth + '월 ' + i + '일 (' + weekdayKor + ')';
+      var currentYear = currentDate.getFullYear();
+      var currentMonth = currentDate.getMonth() + 1;
+      var dateString = '' + currentYear + '년 ' + currentMonth + '월 ' + currentDate.getDate() + '일 (' + weekdayKor + ')';
       dateStrings.push(dateString);
+      currentDate = new Date(currentDate.getTime() + increment);
     }
+
     return dateStrings;
   }
   
@@ -77,8 +91,12 @@ $(function() {
     var currentDate = new Date();
     var currentYear = currentDate.getFullYear();
     var currentMonth = currentDate.getMonth() + 1;
-    $('#schedule-year').val(currentYear);
-    $('#schedule-month').val(currentMonth);
+    $('#schedule-start-year').val(currentYear);
+    $('#schedule-start-month').val(currentMonth);
+    $('#schedule-start-day').val(1);
+    $('#schedule-end-year').val(currentYear);
+    $('#schedule-end-month').val(currentMonth);
+    $('#schedule-end-day').val(1);
   }
   
   function renderNamePositionTable(allPositions, allPersonNames) {
